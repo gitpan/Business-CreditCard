@@ -10,10 +10,14 @@ Discover                          6011                             16
 JCB                               3                                16
 JCB                               2131, 1800                       15
 
+--
+
 from Neale Banks <neale@lowendale.com.au>
 According to a booklet I have from Westpac (an Aussie bank), a card number
 starting with 5610 or 56022[1-5] is a BankCard
 BankCards have exactly 16 digits.
+
+--
 
 from "Becker, Max" <Max.Becker@firstgate.com>
 It's mostly used in the UK and is either called "Switch" or "Solo".
@@ -30,6 +34,8 @@ switch
    7[4-9]
    8[1-2]
 4936
+
+--
 
 from http://en.wikipedia.org/wiki/Credit_card_number#Prefixes
 As of November 8, 2004, MasterCard and Diner's club formed an alliance.
@@ -64,9 +70,13 @@ Minimum IIN             Maximum IIN             Product
 Please ensure that your POS terminals, websites and any pertinent
 internal systems can accept these new IINs.
 
+--
+
 from http://en.wikipedia.org/wiki/Laser_(debit_card)#Technical
 Laser cards are prefixed with either "6304", "6706", "6771" or "6709", and
 may be between 16 and 19 characters in length.
+
+--
 
 from https://www.discovernetworkvar.com/pdf_docs/9-2_VAR_ALERT_Sep_2009.pdf
 Be sure to update your POS systems now with the following expanded Issuer
@@ -106,3 +116,44 @@ Northern Mariana Islands and Guam, subject to certain exceptions in Acquir
 applicable.
 2 The PAN length for this IIN Range (36000000 to 36999999) is 14 digits.
 
+--
+
+from SBH Israel / Nir Alfandari:
+Local Isracard: 8(-9?) digits
+
+From http://www.wysiwyg.co.il/Anatomy-of-CreditCard-Number-formats.asp#IsraCard-algorithm
+8-9 digits, non-LUHN validation
+
+From Erik Levinse:
+ i think it's like luhn, except instead of 212121... you put
++987654321 under the number you're validating, multiply each, and do mod 11 on
++the sum, instead of mod 10.
+
+
+--------------------
+
+From Jason Terry:
+
+ list of the IIN values that were given to us by Discover.  We manually tested a number from each end of the range to make sure B:CC worked.
+ 
+ 30000000-30599999 DCI
+ 30950000-30959999 DCI
+ 35280000-35899999 JCB * us only
+ 36000000-36999999 DCI * 14 digits
+ 38000000-39999999 DCI
+ 60110000-60110999 DN
+ 60112000-60114999 DN
+ 60117400-60117499 DN
+ 60117700-60117999 DN
+ 60118600-60119999 DN
+ 62212600-62292599 CUP
+ 62400000-62699999 CUP
+ 62820000-62889999 CUP
+ 64400000-65999999 DN
+
+---
+
+DCI = diner's, now discover everywhere
+JCB = treat JCB as discover inside the US
+DN = Discover Network
+CUP = China Union Pay, treat as Discover outside China

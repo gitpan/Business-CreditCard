@@ -1,5 +1,14 @@
 Revision history for Perl extension Business::CreditCard.
 
+0.32  Thu Feb 21 16:02:42 PST 2013
+        - Add Israeli Isracard (no checksum yet)
+        - Add LICENSE=>perl to Makefile.PL; add license to META.yml,
+          closes: cpan #27735
+        - Documentation: Add link to Neil Bowers' review of CC check modules
+        - Rearrange cardtype() for performance
+        - Fix Discover identification of 39 and 3529-3589 prefixes, patch from
+          Jason Terry, thanks!
+
 0.31  Mon Oct 19 18:51:35 PDT 2009
         - Add LICENSE section to POD documentation
         - Add META.yml to MANIFEST

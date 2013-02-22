@@ -4,7 +4,8 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'         => 'Business::CreditCard',
     'VERSION_FROM' => 'CreditCard.pm', # finds $VERSION
-    PREREQ_PM       => {
+    'LICENSE'      => 'perl',
+    'PREREQ_PM'       => {
         'Test::More' => 0,
     }
 );

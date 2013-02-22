@@ -42,6 +42,8 @@ sub test_card_identification {
                 '5610xxxxxxxxxxxx' =>   'BankCard',
                 '6250xxxxxxxxxxxx' =>   'Discover card', #China Union Pay
                 '6280xxxxxxxxxxxx' =>   'Discover card', #China Union Pay
+                '12345678'  => 'Isracard',
+                '123456780' => 'Isracard',
         );
         while( my ($k, $v)=each(%test_table) ){
                 if(cardtype($k) ne $v){

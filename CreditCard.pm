@@ -5,7 +5,7 @@ use vars qw( @ISA $VERSION $Country );
 
 @ISA = qw( Exporter );
 
-$VERSION = "0.31";
+$VERSION = "0.32";
 
 $Country = 'US';
 
@@ -49,6 +49,7 @@ Possible return values are:
   Solo
   China Union Pay
   Laser
+  Isracard
   Unknown
 
 "Not a credit card" is returned on obviously invalid data values.
@@ -124,17 +125,30 @@ Please don't bother Jon with emails about this module.
 Lee Lawrence <LeeL@aspin.co.uk>, Neale Banks <neale@lowendale.com.au> and
 Max Becker <Max.Becker@firstgate.com> contributed support for additional card
 types.  Lee also contributed a working test.pl.  Alexandr Ciornii
-<alexchorny@gmail.com> contributed code cleanups.
+<alexchorny@gmail.com> contributed code cleanups.  Jason Terry
+<jterry@bluehost.com> contributed updates for Discover BIN ranges.
 
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 1995,1996,1997 Jon Orwant
 Copyright (C) 2001-2006 Ivan Kohler
-Copyright (C) 2007-2009 Freeside Internet Services, Inc.
+Copyright (C) 2007-2013 Freeside Internet Services, Inc.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
 at your option, any later version of Perl 5 you may have available.
+
+=head1 BUGS
+
+(paraphrasing Neil Bowers) We export all functions by default.  It would be
+better to let the user decide which functions to import.  And validate() is
+a bit of a generic name.
+
+The question is, after almost 2 decades with this interface (inherited from
+the original author, who probably never expected it to live half this long),
+how to change things to behave in a more modern fashion without breaking
+existing code?  "use Business::CreditCard <some_minimum_version>" turns it off?
+Explicitly ask to turn it off and list that in the SYNOPSIS?
 
 =head1 SEE ALSO
 
@@ -145,9 +159,19 @@ Business::CreditCard distribution is welcome.
 L<Business::OnlinePayment> is a framework for processing online payments
 including modules for various payment gateways.
 
+http://neilb.org/reviews/luhn.html is an excellent overview of similar modules
+providing credit card number verification (LUHN checking).
+
 =cut
 
 @EXPORT = qw(cardtype validate generate_last_digit);
+
+## ref http://neilb.org/reviews/luhn.html#Comparison it looks like
+## Business::CCCheck is 2x faster than we are.  looking at their implementation
+## not entirely a fair comparison, we also do the equivalent of their CC_clean,
+## they don't recognize certain cards at all (i.e. Switch) which require
+## an expensive check before VISA, Diners doesn't exist anymore, Discover is
+## a lot more than just 6011*, they don't handle processing agreements, etc.
 
 sub cardtype {
     my ($number) = @_;
@@ -160,31 +184,37 @@ sub cardtype {
     #$number =~ s/\D//g;
     {
       local $^W=0; #no warning at next line
-      return "Not a credit card" unless length($number) >= 13 && 0+$number;
+      return "Not a credit card"
+        unless ( length($number) >= 13
+                 || length($number) == 8 || length($number) == 9 #Isracard
+               )
+            && 0+$number;
     }
 
-    return "Switch"
-      if $number =~ /^49(03(0[2-9]|3[5-9])|11(0[1-2]|7[4-9]|8[1-2])|36[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o
-      || $number =~ /^564182[\dx]{10}([\dx]{2,3})?$/o
-      || $number =~ /^6(3(33[0-4][0-9])|759[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o;
-
-    return "VISA card" if $number =~ /^4[\dx]{12}([\dx]{3})?$/o;
+    return "VISA card" if $number =~ /^4[0-8][\dx]{11}([\dx]{3})?$/o;
 
     return "MasterCard"
       if   $number =~ /^5[1-5][\dx]{14}$/o
       ;# || ( $number =~ /^36[\dx]{12}/ && $Country =~ /^(US|CA)$/oi );
 
+    return "American Express card" if $number =~ /^3[47][\dx]{13}$/o;
+
     return "Discover card"
       if   $number =~ /^30[0-5][\dx]{11}([\dx]{2})?$/o  #diner's: 300-305
       ||   $number =~ /^3095[\dx]{10}([\dx]{2})?$/o     #diner's: 3095
-      ||   $number =~ /^3[68][\dx]{12}([\dx]{2})?$/o    #diner's: 36
+      ||   $number =~ /^3[689][\dx]{12}([\dx]{2})?$/o   #diner's: 36 38 and 39
       ||   $number =~ /^6011[\dx]{12}$/o
       ||   $number =~ /^64[4-9][\dx]{13}$/o
       ||   $number =~ /^65[\dx]{14}$/o
       || ( $number =~ /^62[24-68][\dx]{13}$/o && uc($Country) ne 'CN' ) #CUP
-      || ( $number =~ /^35(2[89]|[3-8][\dx])[\dx]{10}$/o && uc($Country) eq 'US' );
+      || ( $number =~ /^35(2[89]|[3-8][\dx])[\dx]{12}$/o && uc($Country) eq 'US' );
 
-    return "American Express card" if $number =~ /^3[47][\dx]{13}$/o;
+    return "Switch"
+      if $number =~ /^49(03(0[2-9]|3[5-9])|11(0[1-2]|7[4-9]|8[1-2])|36[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o
+      || $number =~ /^564182[\dx]{10}([\dx]{2,3})?$/o
+      || $number =~ /^6(3(33[0-4][0-9])|759[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o;
+    #redunant with above, catch 49* that's not Switch
+    return "VISA card" if $number =~ /^4[\dx]{12}([\dx]{3})?$/o;
 
     #return "Diner's Club/Carte Blanche"
     #  if $number =~ /^3(0[0-59]|[68][\dx])[\dx]{11}$/o;
@@ -205,11 +235,17 @@ sub cardtype {
     return "Laser"
       if $number =~ /^6(304|7(06|09|71))[\dx]{12,15}$/o;
 
+    return "Isracard"
+      if $number =~ /^[\dx]{8,9}$/;
+
     return "Unknown";
 }
 
 sub generate_last_digit {
     my ($number) = @_;
+
+    die "invalid operation" if length($number) == 8 || length($number) == 9;
+
     my ($i, $sum, $weight);
 
     $number =~ s/\D//g;
@@ -222,13 +258,38 @@ sub generate_last_digit {
     return (10 - $sum % 10) % 10;
 }
 
+
+## this (GPLed) code from Business::CCCheck is apparantly 4x faster than ours
+## ref http://neilb.org/reviews/luhn.html#Comparison
+## maybe see if we can spped ours up a bit
+#  my @ccn = split('',$ccn);
+#  my $even = 0;
+#  $ccn = 0;
+#  for($i=$#ccn;$i >=0;--$i) {
+#    $ccn[$i] *= 2 if $even;
+#    $ccn -= 9 if $ccn[$i] > 9;
+#    $ccn += $ccn[$i];
+#    $even = ! $even;
+#  }
+#  $type = '' if $ccn % 10;
+#  return $type;
 sub validate {
     my ($number) = @_;
+
     my ($i, $sum, $weight);
     
     return 0 if $number =~ /[^\d\s]/;
 
     $number =~ s/\D//g;
+
+    if ( $number =~ /^[\dx]{8,9}$/ ) { # Isracard
+        $number = "0$number" if length($number) == 8;
+        for($i=1;$i<length($number);$i++){
+            $sum += substr($number,9-$i,1) * $i;
+        }
+        return 1 if $sum%11 == 0;
+        return 0;
+    }
 
     return 0 unless length($number) >= 13 && 0+$number;
 

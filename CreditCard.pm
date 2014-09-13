@@ -5,7 +5,7 @@ use vars qw( @ISA $VERSION $Country );
 
 @ISA = qw( Exporter );
 
-$VERSION = "0.32";
+$VERSION = "0.33";
 
 $Country = 'US';
 
@@ -132,7 +132,7 @@ types.  Lee also contributed a working test.pl.  Alexandr Ciornii
 
 Copyright (C) 1995,1996,1997 Jon Orwant
 Copyright (C) 2001-2006 Ivan Kohler
-Copyright (C) 2007-2013 Freeside Internet Services, Inc.
+Copyright (C) 2007-2014 Freeside Internet Services, Inc.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
@@ -174,6 +174,9 @@ providing credit card number verification (LUHN checking).
 ## a lot more than just 6011*, they don't handle processing agreements, etc.
 
 sub cardtype {
+    # Allow use as a class method
+    shift if UNIVERSAL::isa( $_[0], 'Business::CreditCard' );
+
     my ($number) = @_;
 
     $number =~ s/[\s\-]//go;
@@ -207,7 +210,7 @@ sub cardtype {
       ||   $number =~ /^64[4-9][\dx]{13}$/o
       ||   $number =~ /^65[\dx]{14}$/o
       || ( $number =~ /^62[24-68][\dx]{13}$/o && uc($Country) ne 'CN' ) #CUP
-      || ( $number =~ /^35(2[89]|[3-8][\dx])[\dx]{12}$/o && uc($Country) eq 'US' );
+      || ( $number =~ /^35(2[89]|[3-8][\dx])[\dx]{12}$/o && $Country =~ /^(US|CA)$/oi ); #JCB cards in the 3528-3589 range are identified as Discover inside the US and Canada
 
     return "Switch"
       if $number =~ /^49(03(0[2-9]|3[5-9])|11(0[1-2]|7[4-9]|8[1-2])|36[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o
@@ -242,6 +245,9 @@ sub cardtype {
 }
 
 sub generate_last_digit {
+    # Allow use as a class method
+    shift if UNIVERSAL::isa( $_[0], 'Business::CreditCard' );
+
     my ($number) = @_;
 
     die "invalid operation" if length($number) == 8 || length($number) == 9;
@@ -261,7 +267,7 @@ sub generate_last_digit {
 
 ## this (GPLed) code from Business::CCCheck is apparantly 4x faster than ours
 ## ref http://neilb.org/reviews/luhn.html#Comparison
-## maybe see if we can spped ours up a bit
+## maybe see if we can speed ours up a bit
 #  my @ccn = split('',$ccn);
 #  my $even = 0;
 #  $ccn = 0;
@@ -274,6 +280,9 @@ sub generate_last_digit {
 #  $type = '' if $ccn % 10;
 #  return $type;
 sub validate {
+    # Allow use as a class method
+    shift if UNIVERSAL::isa( $_[0], 'Business::CreditCard' );
+
     my ($number) = @_;
 
     my ($i, $sum, $weight);

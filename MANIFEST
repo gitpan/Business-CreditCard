@@ -6,3 +6,6 @@ README
 BINS
 META.yml
 t/test.t
+t/agreements.t
+t/validation.t
+META.json                                Module JSON meta-data (added by MakeMaker)
